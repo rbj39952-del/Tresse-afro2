@@ -17,8 +17,22 @@ export default function AdminPage() {
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [newType, setNewType] = useState('')
 
-  const [formData, setFormData] = useState({
-    name: '', type_id: '', city: '', price_range: 'medium' as const,
+  const [formData, setFormData] = useState<{
+    name: string
+    type_id: string
+    city: string
+    price_range: 'budget' | 'medium' | 'premium'
+    price_min: number
+    price_max: number
+    duration_minutes: number
+    salon_name: string
+    salon_phone: string
+    instagram_url: string
+    whatsapp_url: string
+    image_url: string
+    description: string
+  }>({
+    name: '', type_id: '', city: '', price_range: 'medium',
     price_min: 0, price_max: 0, duration_minutes: 0, salon_name: '',
     salon_phone: '', instagram_url: '', whatsapp_url: '', image_url: '', description: '',
   })
@@ -83,108 +97,4 @@ export default function AdminPage() {
             <div className="border border-border rounded-2xl p-8">
               <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
               <p className="text-muted mb-8">Connectez-vous pour gérer le contenu</p>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="input w-full" placeholder="Mot de passe admin" />
-                <button type="submit" className="btn btn-primary w-full">Se connecter</button>
-              </form>
-              <p className="text-xs text-muted mt-4 text-center">Mot de passe: tresse2024</p>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Header />
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold mb-2">Admin Panel</h1>
-            <button onClick={() => setIsAuthenticated(false)} className="text-sm text-muted hover:text-ink transition-colors">Se déconnecter</button>
-          </div>
-          <div className="flex gap-4 mb-8 border-b border-border">
-            <button className="px-4 py-2 border-b-2 border-ink font-medium">Services</button>
-            <button onClick={() => setShowAddType(!showAddType)} className="px-4 py-2 text-muted hover:text-ink transition-colors">Types de coiffure</button>
-          </div>
-          {showAddType && (
-            <div className="mb-12 p-6 border border-border rounded-lg bg-surface">
-              <h2 className="text-xl font-bold mb-4">Types de coiffure</h2>
-              <form onSubmit={handleAddType} className="mb-6">
-                <div className="flex gap-3">
-                  <input type="text" value={newType} onChange={(e) => setNewType(e.target.value)} placeholder="Ajouter un nouveau type..." className="input flex-1" />
-                  <button type="submit" className="btn btn-primary">Ajouter</button>
-                </div>
-              </form>
-              <div className="space-y-2">
-                {hairstyleTypes.map((type) => (
-                  <div key={type.id} className="flex items-center justify-between p-3 bg-white border border-border rounded-lg">
-                    <span>{type.name}</span>
-                    <span className="text-xs text-muted">{type.id}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Services</h2>
-              <button onClick={() => { setShowAddService(!showAddService); setEditingService(null); resetForm() }} className="btn btn-primary flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Ajouter un service
-              </button>
-            </div>
-            {showAddService && (
-              <form onSubmit={handleAddService} className="mb-12 p-6 border border-border rounded-lg bg-surface">
-                <h3 className="text-lg font-bold mb-6">{editingService ? 'Modifier le service' : 'Ajouter un service'}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                  <input type="text" placeholder="Nom du style *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="input" required />
-                  <select value={formData.type_id} onChange={(e) => setFormData({ ...formData, type_id: e.target.value })} className="input" required>
-                    <option value="">Sélectionner un type *</option>
-                    {hairstyleTypes.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
-                  </select>
-                  <input type="text" placeholder="Ville *" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="input" required />
-                  <select value={formData.price_range} onChange={(e) => setFormData({ ...formData, price_range: e.target.value as any })} className="input">
-                    <option value="budget">€ Budget</option>
-                    <option value="medium">€€ Moyen</option>
-                    <option value="premium">€€€ Premium</option>
-                  </select>
-                  <input type="number" placeholder="Prix min (€)" value={formData.price_min} onChange={(e) => setFormData({ ...formData, price_min: parseInt(e.target.value) || 0 })} className="input" />
-                  <input type="number" placeholder="Prix max (€)" value={formData.price_max} onChange={(e) => setFormData({ ...formData, price_max: parseInt(e.target.value) || 0 })} className="input" />
-                  <input type="number" placeholder="Durée (minutes)" value={formData.duration_minutes} onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })} className="input" />
-                  <input type="text" placeholder="Nom du salon *" value={formData.salon_name} onChange={(e) => setFormData({ ...formData, salon_name: e.target.value })} className="input" required />
-                  <input type="tel" placeholder="Téléphone salon" value={formData.salon_phone} onChange={(e) => setFormData({ ...formData, salon_phone: e.target.value })} className="input" />
-                  <input type="url" placeholder="URL Instagram" value={formData.instagram_url} onChange={(e) => setFormData({ ...formData, instagram_url: e.target.value })} className="input" />
-                  <input type="url" placeholder="URL WhatsApp" value={formData.whatsapp_url} onChange={(e) => setFormData({ ...formData, whatsapp_url: e.target.value })} className="input" />
-                  <input type="url" placeholder="URL Image *" value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} className="input" required />
-                </div>
-                <textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="input w-full h-24 mb-4" />
-                <div className="flex gap-3">
-                  <button type="submit" className="btn btn-primary">{editingService ? 'Modifier' : 'Ajouter'}</button>
-                  <button type="button" onClick={() => { setShowAddService(false); setEditingService(null) }} className="btn btn-secondary">Annuler</button>
-                </div>
-              </form>
-            )}
-            <div className="space-y-3">
-              {services.map((service) => (
-                <div key={service.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-surface transition-colors">
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{service.name}</h3>
-                    <p className="text-sm text-muted">{typeNameMap[service.type_id]} • {service.city} • {service.price_min}€-{service.price_max}€</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleEditService(service)} className="p-2 hover:bg-white rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
-                    <button onClick={() => handleDeleteService(service.id)} className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </main>
-      <Footer />
-    </div>
-  )
-}
+              
