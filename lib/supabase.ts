@@ -5,15 +5,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-export async function fetchHairstyleTypes() {
-  const { data, error } = await supabase.from('hairstyle_types').select('*').order('name')
-  if (error) {
-    console.error(error)
-    return []
-  }
-  return data || []
-}
-
 export async function fetchServices() {
   const { data, error } = await supabase
     .from('services')
@@ -26,7 +17,7 @@ export async function fetchServices() {
   return data || []
 }
 
-export async function uploadImage(file: File): Promise<string | null> {
+export async function uploadMedia(file: File): Promise<string | null> {
   const fileExt = file.name.split('.').pop()
   const fileName = Date.now() + '-' + Math.random().toString(36).substring(2) + '.' + fileExt
 
