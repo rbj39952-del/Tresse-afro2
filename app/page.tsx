@@ -7,12 +7,11 @@ import { SearchBar } from '@/components/SearchBar'
 import { FilterPanel } from '@/components/FilterPanel'
 import { ServiceCard } from '@/components/ServiceCard'
 import { ServiceModal } from '@/components/ServiceModal'
-import { fetchServices, fetchHairstyleTypes } from '@/lib/supabase'
-import type { Service, HairstyleType } from '@/lib/data'
+import { fetchServices } from '@/lib/supabase'
+import type { Service } from '@/lib/data'
 
 export default function Home() {
   const [services, setServices] = useState<Service[]>([])
-  const [hairstyleTypes, setHairstyleTypes] = useState<HairstyleType[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedType, setSelectedType] = useState('')
@@ -22,9 +21,8 @@ export default function Home() {
 
   useEffect(() => {
     async function load() {
-      const [svc, types] = await Promise.all([fetchServices(), fetchHairstyleTypes()])
+      const svc = await fetchServices()
       setServices(svc as Service[])
-      setHairstyleTypes(types as HairstyleType[])
       setLoading(false)
     }
     load()
@@ -34,13 +32,9 @@ export default function Home() {
     return Array.from(new Set(services.map((s) => s.city))).sort()
   }, [services])
 
-  const typeNameMap = useMemo(() => {
-    const map: Record<string, string> = {}
-    for (const type of hairstyleTypes) {
-      map[type.id] = type.name
-    }
-    return map
-  }, [hairstyleTypes])
+  const types = useMemo(() => {
+    return Array.from(new Set(services.map((s) => s.type))).sort()
+  }, [services])
 
   const filteredServices = useMemo(() => {
     return services.filter((service) => {
@@ -48,7 +42,7 @@ export default function Home() {
         search === '' ||
         service.name.toLowerCase().includes(search.toLowerCase()) ||
         service.salon_name.toLowerCase().includes(search.toLowerCase())
-      const matchesType = selectedType === '' || service.type_id === selectedType
+      const matchesType = selectedType === '' || service.type === selectedType
       const matchesCity = selectedCity === '' || service.city === selectedCity
       return matchesSearch && matchesType && matchesCity
     })
@@ -58,8 +52,6 @@ export default function Home() {
     setSelectedService(service)
     setIsModalOpen(true)
   }
-
-  const getTypeNameById = (typeId: string) => typeNameMap[typeId] || typeId
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -76,7 +68,7 @@ export default function Home() {
           <div className="space-y-4 mb-10">
             <SearchBar value={search} onChange={setSearch} placeholder="Chercher un style, un salon..." />
             <FilterPanel
-              hairstyleTypes={hairstyleTypes}
+              types={types}
               selectedType={selectedType}
               selectedCity={selectedCity}
               cities={cities}
@@ -103,7 +95,6 @@ export default function Home() {
                     <ServiceCard
                       key={service.id}
                       service={service}
-                      typeName={getTypeNameById(service.type_id)}
                       onClick={() => handleSelectService(service)}
                     />
                   ))}
@@ -121,7 +112,6 @@ export default function Home() {
 
       <ServiceModal
         service={selectedService}
-        typeName={selectedService ? getTypeNameById(selectedService.type_id) : undefined}
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false)
