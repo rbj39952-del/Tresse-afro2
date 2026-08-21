@@ -1,12 +1,12 @@
 'use client'
 
 import Image from 'next/image'
-import { X, MapPin, Clock, Phone } from 'lucide-react'
+import { X, MapPin, Phone } from 'lucide-react'
+import { isVideoUrl } from '@/lib/data'
 import type { Service } from '@/lib/data'
 
 interface ServiceModalProps {
   service: Service | null
-  typeName?: string
   isOpen: boolean
   onClose: () => void
 }
@@ -23,11 +23,12 @@ function getContactHref(contact: string) {
   return 'https://' + trimmed
 }
 
-export function ServiceModal({ service, typeName, isOpen, onClose }: ServiceModalProps) {
+export function ServiceModal({ service, isOpen, onClose }: ServiceModalProps) {
   if (!isOpen || !service) return null
 
   const contactHref = getContactHref(service.contact)
   const isPhoneLink = contactHref.startsWith('tel:')
+  const isVideo = isVideoUrl(service.image_url)
 
   return (
     <>
@@ -42,25 +43,26 @@ export function ServiceModal({ service, typeName, isOpen, onClose }: ServiceModa
 
         <div className="p-6 space-y-6">
           <div className="relative w-full h-80 rounded-lg overflow-hidden bg-surface">
-            <Image src={service.image_url} alt={service.name} fill className="object-cover" />
+            {isVideo ? (
+              <video
+                src={service.image_url}
+                className="w-full h-full object-cover"
+                controls
+                playsInline
+              />
+            ) : (
+              <Image src={service.image_url} alt={service.name} fill className="object-cover" />
+            )}
           </div>
 
           <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-3xl font-bold">{service.price} EUR</span>
-            {typeName && <span className="badge">{typeName}</span>}
+            <span className="badge">{service.type}</span>
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-muted">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4" />
-              <span>{service.city}</span>
-            </div>
-            {service.duration_minutes ? (
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4" />
-                <span>{service.duration_minutes} min</span>
-              </div>
-            ) : null}
+          <div className="flex items-center gap-1.5 text-sm text-muted">
+            <MapPin className="w-4 h-4" />
+            <span>{service.city}</span>
           </div>
 
           <div>
