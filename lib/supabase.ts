@@ -17,6 +17,15 @@ export async function fetchServices() {
   return data || []
 }
 
+export async function fetchSettings() {
+  const { data, error } = await supabase.from('settings').select('*').eq('id', 1).single()
+  if (error) {
+    console.error(error)
+    return null
+  }
+  return data
+}
+
 export async function uploadMedia(file: File): Promise<string | null> {
   const fileExt = file.name.split('.').pop()
   const fileName = Date.now() + '-' + Math.random().toString(36).substring(2) + '.' + fileExt
