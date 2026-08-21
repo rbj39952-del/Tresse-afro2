@@ -1,33 +1,44 @@
 'use client'
 
 import Image from 'next/image'
-import { MapPin, Clock } from 'lucide-react'
+import { MapPin } from 'lucide-react'
+import { isVideoUrl } from '@/lib/data'
 import type { Service } from '@/lib/data'
 
 interface ServiceCardProps {
   service: Service
-  typeName?: string
   onClick?: () => void
 }
 
-export function ServiceCard({ service, typeName, onClick }: ServiceCardProps) {
+export function ServiceCard({ service, onClick }: ServiceCardProps) {
+  const isVideo = isVideoUrl(service.image_url)
+
   return (
     <div onClick={onClick} className="cursor-pointer group">
       <div className="relative w-full aspect-[4/5] bg-surface overflow-hidden rounded-xl border border-border">
-        <Image
-          src={service.image_url}
-          alt={service.name}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-
-        {typeName && (
-          <div className="absolute top-3 left-3">
-            <span className="inline-block px-2.5 py-1 rounded-full bg-black/60 text-white text-xs font-medium backdrop-blur-sm">
-              {typeName}
-            </span>
-          </div>
+        {isVideo ? (
+          <video
+            src={service.image_url}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            muted
+            loop
+            autoPlay
+            playsInline
+          />
+        ) : (
+          <Image
+            src={service.image_url}
+            alt={service.name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+          />
         )}
+
+        <div className="absolute top-3 left-3">
+          <span className="inline-block px-2.5 py-1 rounded-full bg-black/60 text-white text-xs font-medium backdrop-blur-sm">
+            {service.type}
+          </span>
+        </div>
 
         <div className="absolute bottom-3 left-3">
           <span className="inline-block px-3 py-1.5 rounded-lg bg-white text-ink font-bold text-base shadow-md">
@@ -41,9 +52,6 @@ export function ServiceCard({ service, typeName, onClick }: ServiceCardProps) {
         <div className="flex items-center gap-1 text-sm text-muted mb-0.5">
           <MapPin className="w-3.5 h-3.5" />
           <span>{service.city}</span>
-          <span className="mx-1">-</span>
-          <Clock className="w-3.5 h-3.5" />
-          <span>{service.duration_minutes}min</span>
         </div>
         <p className="text-sm text-muted">{service.salon_name}</p>
       </div>
