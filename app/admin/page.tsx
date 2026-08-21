@@ -1,59 +1,60 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
-import { EXAMPLE_HAIRSTYLE_TYPES, EXAMPLE_SERVICES } from '@/lib/data'
+import { fetchServices, fetchHairstyleTypes, uploadImage } from '@/lib/supabase'
 import { Trash2, Edit2, Plus } from 'lucide-react'
 import type { Service, HairstyleType } from '@/lib/data'
 
 export default function AdminPage() {
   const [adminPassword, setAdminPassword] = useState('')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [services, setServices] = useState<Service[]>(EXAMPLE_SERVICES)
-  const [hairstyleTypes, setHairstyleTypes] = useState<HairstyleType[]>(EXAMPLE_HAIRSTYLE_TYPES)
+  const [services, setServices] = useState<Service[]>([])
+  const [hairstyleTypes, setHairstyleTypes] = useState<HairstyleType[]>([])
+  const [loading, setLoading] = useState(true)
   const [showAddService, setShowAddService] = useState(false)
   const [showAddType, setShowAddType] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [newType, setNewType] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [formData, setFormData] = useState<{
-    name: string
-    type_id: string
-    city: string
-    price_range: 'budget' | 'medium' | 'premium'
-    price_min: number
-    price_max: number
-    duration_minutes: number
-    salon_name: string
-    salon_phone: string
-    instagram_url: string
-    whatsapp_url: string
-    image_url: string
-    description: string
-  }>({
+  const [formData, setFormData] = useState({
     name: '',
     type_id: '',
     city: '',
-    price_range: 'medium',
-    price_min: 0,
-    price_max: 0,
+    price: 0,
     duration_minutes: 0,
     salon_name: '',
-    salon_phone: '',
-    instagram_url: '',
-    whatsapp_url: '',
+    contact: '',
     image_url: '',
     description: '',
   })
 
-  const ADMIN_PASSWORD = 'tresse2024'
+  const loadData = async () => {
+    setLoading(true)
+    const [svc, types] = await Promise.all([fetchServices(), fetchHairstyleTypes()])
+    setServices(svc as Service[])
+    setHairstyleTypes(types as HairstyleType[])
+    setLoading(false)
+  }
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadData()
+    }
+  }, [isAuthenticated])
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (adminPassword === ADMIN_PASSWORD) {
+    const res = await fetch('/api/admin/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: adminPassword }),
+    })
+    if (res.ok) {
       setIsAuthenticated(true)
-      setAdminPassword('')
     } else {
       alert('Mot de passe incorrect')
     }
@@ -64,56 +65,73 @@ export default function AdminPage() {
       name: '',
       type_id: '',
       city: '',
-      price_range: 'medium',
-      price_min: 0,
-      price_max: 0,
+      price: 0,
       duration_minutes: 0,
       salon_name: '',
-      salon_phone: '',
-      instagram_url: '',
-      whatsapp_url: '',
+      contact: '',
       image_url: '',
       description: '',
     })
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
-  const handleAddService = (e: React.FormEvent) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const url = await uploadImage(file)
+    setUploading(false)
+    if (url) {
+      setFormData((prev) => ({ ...prev, image_url: url }))
+    } else {
+      alert('Erreur lors du telechargement de la photo')
+    }
+  }
+
+  const handleAddService = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || !formData.type_id || !formData.city) {
-      alert('Veuillez remplir les champs obligatoires')
+    if (!formData.name || !formData.type_id || !formData.city || !formData.image_url) {
+      alert('Veuillez remplir les champs obligatoires (dont la photo)')
       return
     }
-    if (editingService) {
-      setServices(
-        services.map((s) =>
-          s.id === editingService.id
-            ? {
-                ...formData,
-                id: editingService.id,
-                created_at: editingService.created_at,
-                updated_at: new Date().toISOString(),
-              }
-            : s
-        )
-      )
-      setEditingService(null)
-    } else {
-      const newService: Service = {
-        id: Math.random().toString(36).substr(2, 9),
+
+    const res = await fetch('/api/admin/services', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        password: adminPassword,
+        id: editingService?.id,
         ...formData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-      setServices([...services, newService])
+      }),
+    })
+    const result = await res.json()
+
+    if (!res.ok) {
+      alert(result.error || 'Erreur lors de l enregistrement')
+      return
     }
+
+    await loadData()
     resetForm()
+    setEditingService(null)
     setShowAddService(false)
   }
 
-  const handleDeleteService = (id: string) => {
-    if (confirm('Supprimer ce service ?')) {
-      setServices(services.filter((s) => s.id !== id))
+  const handleDeleteService = async (id: string) => {
+    if (!confirm('Supprimer ce service ?')) return
+    const res = await fetch('/api/admin/services', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: adminPassword, id }),
+    })
+    if (!res.ok) {
+      const result = await res.json()
+      alert(result.error || 'Erreur lors de la suppression')
+      return
     }
+    await loadData()
   }
 
   const handleEditService = (service: Service) => {
@@ -121,14 +139,10 @@ export default function AdminPage() {
       name: service.name,
       type_id: service.type_id,
       city: service.city,
-      price_range: service.price_range,
-      price_min: service.price_min,
-      price_max: service.price_max,
-      duration_minutes: service.duration_minutes,
+      price: service.price,
+      duration_minutes: service.duration_minutes || 0,
       salon_name: service.salon_name,
-      salon_phone: service.salon_phone || '',
-      instagram_url: service.instagram_url || '',
-      whatsapp_url: service.whatsapp_url || '',
+      contact: service.contact,
       image_url: service.image_url,
       description: service.description || '',
     })
@@ -136,13 +150,21 @@ export default function AdminPage() {
     setShowAddService(true)
   }
 
-  const handleAddType = (e: React.FormEvent) => {
+  const handleAddType = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newType.trim()) return
-    setHairstyleTypes([
-      ...hairstyleTypes,
-      { id: newType.toLowerCase().replace(/\s+/g, '-'), name: newType },
-    ])
+    const id = newType.toLowerCase().replace(/\s+/g, '-')
+    const res = await fetch('/api/admin/types', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: adminPassword, id, name: newType }),
+    })
+    const result = await res.json()
+    if (!res.ok) {
+      alert(result.error || 'Erreur lors de l ajout du type')
+      return
+    }
+    await loadData()
     setNewType('')
     setShowAddType(false)
   }
@@ -176,7 +198,6 @@ export default function AdminPage() {
                   Se connecter
                 </button>
               </form>
-              <p className="text-xs text-muted mt-4 text-center">Mot de passe: tresse2024</p>
             </div>
           </div>
         </main>
@@ -263,6 +284,25 @@ export default function AdminPage() {
                   {editingService ? 'Modifier le service' : 'Ajouter un service'}
                 </h3>
 
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Photo *</label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="input"
+                  />
+                  {uploading && <p className="text-sm text-muted mt-2">Telechargement en cours...</p>}
+                  {formData.image_url && !uploading && (
+                    <img
+                      src={formData.image_url}
+                      alt="Apercu"
+                      className="mt-3 w-32 h-32 object-cover rounded-lg border border-border"
+                    />
+                  )}
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <input
                     type="text"
@@ -296,39 +336,13 @@ export default function AdminPage() {
                     required
                   />
 
-                  <select
-                    value={formData.price_range}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        price_range: e.target.value as 'budget' | 'medium' | 'premium',
-                      })
-                    }
-                    className="input"
-                  >
-                    <option value="budget">Budget (une baguette)</option>
-                    <option value="medium">Moyen (deux baguettes)</option>
-                    <option value="premium">Premium (trois baguettes)</option>
-                  </select>
-
                   <input
                     type="number"
-                    placeholder="Prix min (euros)"
-                    value={formData.price_min}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price_min: parseInt(e.target.value) || 0 })
-                    }
+                    placeholder="Prix (euros) *"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })}
                     className="input"
-                  />
-
-                  <input
-                    type="number"
-                    placeholder="Prix max (euros)"
-                    value={formData.price_max}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price_max: parseInt(e.target.value) || 0 })
-                    }
-                    className="input"
+                    required
                   />
 
                   <input
@@ -336,10 +350,7 @@ export default function AdminPage() {
                     placeholder="Duree (minutes)"
                     value={formData.duration_minutes}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        duration_minutes: parseInt(e.target.value) || 0,
-                      })
+                      setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })
                     }
                     className="input"
                   />
@@ -354,37 +365,11 @@ export default function AdminPage() {
                   />
 
                   <input
-                    type="tel"
-                    placeholder="Telephone salon"
-                    value={formData.salon_phone}
-                    onChange={(e) => setFormData({ ...formData, salon_phone: e.target.value })}
-                    className="input"
-                  />
-
-                  <input
-                    type="url"
-                    placeholder="URL Instagram"
-                    value={formData.instagram_url}
-                    onChange={(e) =>
-                      setFormData({ ...formData, instagram_url: e.target.value })
-                    }
-                    className="input"
-                  />
-
-                  <input
-                    type="url"
-                    placeholder="URL WhatsApp"
-                    value={formData.whatsapp_url}
-                    onChange={(e) => setFormData({ ...formData, whatsapp_url: e.target.value })}
-                    className="input"
-                  />
-
-                  <input
-                    type="url"
-                    placeholder="URL Image *"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    className="input"
+                    type="text"
+                    placeholder="Contact (numero, lien Instagram, TikTok...) *"
+                    value={formData.contact}
+                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                    className="input sm:col-span-2"
                     required
                   />
                 </div>
@@ -397,7 +382,7 @@ export default function AdminPage() {
                 />
 
                 <div className="flex gap-3">
-                  <button type="submit" className="btn btn-primary">
+                  <button type="submit" className="btn btn-primary" disabled={uploading}>
                     {editingService ? 'Modifier' : 'Ajouter'}
                   </button>
                   <button
@@ -414,35 +399,46 @@ export default function AdminPage() {
               </form>
             )}
 
-            <div className="space-y-3">
-              {services.map((service) => (
-                <div
-                  key={service.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-surface transition-colors"
-                >
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{service.name}</h3>
-                    <p className="text-sm text-muted">
-                      {typeNameMap[service.type_id]} - {service.city} - {service.price_min}e-{service.price_max}e
-                    </p>
+            {loading ? (
+              <p className="text-muted">Chargement...</p>
+            ) : (
+              <div className="space-y-3">
+                {services.map((service) => (
+                  <div
+                    key={service.id}
+                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-surface transition-colors"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <img
+                        src={service.image_url}
+                        alt={service.name}
+                        className="w-12 h-12 object-cover rounded-lg"
+                      />
+                      <div>
+                        <h3 className="font-semibold">{service.name}</h3>
+                        <p className="text-sm text-muted">
+                          {typeNameMap[service.type_id]} - {service.city} - {service.price} EUR
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditService(service)}
+                        className="p-2 hover:bg-white rounded-lg transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteService(service.id)}
+                        className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEditService(service)}
-                      className="p-2 hover:bg-white rounded-lg transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteService(service.id)}
-                      className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>
