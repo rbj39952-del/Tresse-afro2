@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
-import { fetchServices, uploadMedia } from '@/lib/supabase'
+import { fetchServices, fetchSettings, uploadMedia } from '@/lib/supabase'
 import { isVideoUrl } from '@/lib/data'
 import { Trash2, Edit2, Plus } from 'lucide-react'
 import type { Service } from '@/lib/data'
@@ -14,6 +14,7 @@ export default function AdminPage() {
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddService, setShowAddService] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -29,10 +30,20 @@ export default function AdminPage() {
     description: '',
   })
 
+  const [currentLogoUrl, setCurrentLogoUrl] = useState('')
+  const [newLogoUrl, setNewLogoUrl] = useState('')
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [savingLogo, setSavingLogo] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+
   const loadData = async () => {
     setLoading(true)
     const svc = await fetchServices()
     setServices(svc as Service[])
+    const settings = await fetchSettings()
+    if (settings?.logo_url) {
+      setCurrentLogoUrl(settings.logo_url)
+    }
     setLoading(false)
   }
 
@@ -144,6 +155,44 @@ export default function AdminPage() {
     setShowAddService(true)
   }
 
+  const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLogoUploading(true)
+    const url = await uploadMedia(file)
+    setLogoUploading(false)
+    if (url) {
+      setNewLogoUrl(url)
+    } else {
+      alert('Erreur lors du telechargement du logo')
+    }
+  }
+
+  const handleSaveLogo = async () => {
+    if (!newLogoUrl) {
+      alert('Choisissez une photo avant d enregistrer')
+      return
+    }
+    setSavingLogo(true)
+    const res = await fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: adminPassword, logo_url: newLogoUrl }),
+    })
+    setSavingLogo(false)
+    const result = await res.json()
+    if (!res.ok) {
+      alert(result.error || 'Erreur lors de l enregistrement du logo')
+      return
+    }
+    setCurrentLogoUrl(newLogoUrl)
+    setNewLogoUrl('')
+    if (logoInputRef.current) {
+      logoInputRef.current.value = ''
+    }
+    alert('Logo mis a jour')
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
@@ -187,6 +236,63 @@ export default function AdminPage() {
               Se deconnecter
             </button>
           </div>
+
+          <div className="flex gap-4 mb-8 border-b border-border">
+            <button className="px-4 py-2 border-b-2 border-ink font-medium">Services</button>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="px-4 py-2 text-muted hover:text-ink transition-colors"
+            >
+              Parametres du site
+            </button>
+          </div>
+
+          {showSettings && (
+            <div className="mb-12 p-6 border border-border rounded-lg bg-surface">
+              <h2 className="text-xl font-bold mb-4">Logo du site</h2>
+
+              <div className="flex items-center gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-muted mb-1">Logo actuel</p>
+                  {currentLogoUrl && (
+                    <img
+                      src={currentLogoUrl}
+                      alt="Logo actuel"
+                      className="w-16 h-16 object-cover rounded-lg border border-border"
+                    />
+                  )}
+                </div>
+
+                {newLogoUrl && (
+                  <div>
+                    <p className="text-xs text-muted mb-1">Nouveau logo</p>
+                    <img
+                      src={newLogoUrl}
+                      alt="Nouveau logo"
+                      className="w-16 h-16 object-cover rounded-lg border border-border"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoFileChange}
+                className="input mb-3"
+              />
+              {logoUploading && <p className="text-sm text-muted mb-3">Telechargement en cours...</p>}
+
+              <button
+                onClick={handleSaveLogo}
+                className="btn btn-primary"
+                disabled={savingLogo || logoUploading}
+              >
+                {savingLogo ? 'Enregistrement...' : 'Enregistrer le logo'}
+              </button>
+            </div>
+          )}
 
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Services</h2>
