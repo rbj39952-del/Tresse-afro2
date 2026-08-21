@@ -1,10 +1,9 @@
 'use client'
 
 import { ChevronDown } from 'lucide-react'
-import type { HairstyleType } from '@/lib/data'
 
 interface FilterPanelProps {
-  hairstyleTypes: HairstyleType[]
+  types: string[]
   selectedType: string
   selectedCity: string
   cities: string[]
@@ -13,7 +12,7 @@ interface FilterPanelProps {
 }
 
 export function FilterPanel({
-  hairstyleTypes,
+  types,
   selectedType,
   selectedCity,
   cities,
@@ -29,9 +28,9 @@ export function FilterPanel({
           className="appearance-none w-full input pr-10 bg-white cursor-pointer"
         >
           <option value="">Tous les styles</option>
-          {hairstyleTypes.map((type) => (
-            <option key={type.id} value={type.id}>
-              {type.name}
+          {types.map((type) => (
+            <option key={type} value={type}>
+              {type}
             </option>
           ))}
         </select>
