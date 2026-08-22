@@ -98,9 +98,18 @@ export default function AdminPage() {
 
   const handleAddService = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || !formData.type || !formData.city || !formData.image_url) {
+    if (!formData.name.trim() || !formData.type.trim() || !formData.city.trim() || !formData.image_url) {
       alert('Veuillez remplir les champs obligatoires (dont la photo ou video)')
       return
+    }
+
+    const payload = {
+      ...formData,
+      name: formData.name.trim(),
+      type: formData.type.trim(),
+      city: formData.city.trim(),
+      salon_name: formData.salon_name.trim(),
+      contact: formData.contact.trim(),
     }
 
     const res = await fetch('/api/admin/services', {
@@ -109,7 +118,7 @@ export default function AdminPage() {
       body: JSON.stringify({
         password: adminPassword,
         id: editingService?.id,
-        ...formData,
+        ...payload,
       }),
     })
     const result = await res.json()
