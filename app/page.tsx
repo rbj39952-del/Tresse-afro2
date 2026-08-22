@@ -29,11 +29,21 @@ export default function Home() {
   }, [])
 
   const cities = useMemo(() => {
-    return Array.from(new Set(services.map((s) => s.city))).sort()
+    const map = new Map<string, string>()
+    services.forEach((s) => {
+      const key = s.city.trim().toLowerCase()
+      if (key && !map.has(key)) map.set(key, s.city.trim())
+    })
+    return Array.from(map.values()).sort((a, b) => a.localeCompare(b))
   }, [services])
 
   const types = useMemo(() => {
-    return Array.from(new Set(services.map((s) => s.type))).sort()
+    const map = new Map<string, string>()
+    services.forEach((s) => {
+      const key = s.type.trim().toLowerCase()
+      if (key && !map.has(key)) map.set(key, s.type.trim())
+    })
+    return Array.from(map.values()).sort((a, b) => a.localeCompare(b))
   }, [services])
 
   const filteredServices = useMemo(() => {
@@ -42,8 +52,12 @@ export default function Home() {
         search === '' ||
         service.name.toLowerCase().includes(search.toLowerCase()) ||
         service.salon_name.toLowerCase().includes(search.toLowerCase())
-      const matchesType = selectedType === '' || service.type === selectedType
-      const matchesCity = selectedCity === '' || service.city === selectedCity
+      const matchesType =
+        selectedType === '' ||
+        service.type.trim().toLowerCase() === selectedType.trim().toLowerCase()
+      const matchesCity =
+        selectedCity === '' ||
+        service.city.trim().toLowerCase() === selectedCity.trim().toLowerCase()
       return matchesSearch && matchesType && matchesCity
     })
   }, [services, search, selectedType, selectedCity])
