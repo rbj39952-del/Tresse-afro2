@@ -8,7 +8,9 @@ const config: Config = {
         ink: '#09090B',
         surface: '#F9FAFB',
         border: '#E4E4E7',
-        muted: '#71717A'
+        muted: '#71717A',
+        accent: '#C05F3C',
+        'accent-dark': '#A34F31'
       }
     }
   },
