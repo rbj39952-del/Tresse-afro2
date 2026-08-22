@@ -46,6 +46,11 @@ export default function Home() {
     return Array.from(map.values()).sort((a, b) => a.localeCompare(b))
   }, [services])
 
+  const totalSalons = useMemo(() => {
+    const set = new Set(services.map((s) => s.salon_name.trim().toLowerCase()))
+    return set.size
+  }, [services])
+
   const filteredServices = useMemo(() => {
     return services.filter((service) => {
       const matchesSearch =
@@ -72,12 +77,29 @@ export default function Home() {
       <Header />
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="mb-10">
+          <div className="mb-8">
             <h1 className="text-4xl sm:text-5xl font-bold mb-4 tracking-tight">Tresse Afro</h1>
-            <p className="text-lg text-muted mb-8 max-w-2xl">
+            <p className="text-lg text-muted max-w-2xl">
               Trouvez votre prochaine coiffure afro a Paris et en Ile-de-France. Contactez directement le salon ou la coiffeuse.
             </p>
           </div>
+
+          {!loading && services.length > 0 && (
+            <div className="flex border-t border-b border-border py-4 mb-10">
+              <div className="flex-1 text-center">
+                <div className="text-xl font-extrabold">{services.length}</div>
+                <div className="text-xs text-muted mt-0.5">style{services.length > 1 ? 's' : ''}</div>
+              </div>
+              <div className="flex-1 text-center border-l border-border">
+                <div className="text-xl font-extrabold">{totalSalons}</div>
+                <div className="text-xs text-muted mt-0.5">salon{totalSalons > 1 ? 's' : ''}</div>
+              </div>
+              <div className="flex-1 text-center border-l border-border">
+                <div className="text-xl font-extrabold">{cities.length}</div>
+                <div className="text-xs text-muted mt-0.5">ville{cities.length > 1 ? 's' : ''}</div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4 mb-10">
             <SearchBar value={search} onChange={setSearch} placeholder="Chercher un style, un salon..." />
