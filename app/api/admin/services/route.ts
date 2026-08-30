@@ -12,6 +12,22 @@ function checkPassword(password: string) {
   return password === process.env.ADMIN_PASSWORD
 }
 
+export async function GET(req: NextRequest) {
+  const password = req.nextUrl.searchParams.get('password') || ''
+  if (!checkPassword(password)) {
+    return NextResponse.json({ error: 'Mot de passe incorrect' }, { status: 401 })
+  }
+
+  const supabase = getAdminClient()
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ services: data })
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json()
   if (!checkPassword(body.password)) {
@@ -32,7 +48,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ service: updated?.[0] })
   }
 
-  const { data: created, error } = await supabase.from('services').insert([data]).select()
+  const { data: created, error } = await supabase
+    .from('services')
+    .insert([{ ...data, status: 'approved' }])
+    .select()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ service: created?.[0] })
