@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
-import { fetchServices, fetchSettings, uploadMedia } from '@/lib/supabase'
+import { fetchSettings, uploadMedia } from '@/lib/supabase'
 import { isVideoUrl } from '@/lib/data'
-import { Trash2, Edit2, Plus } from 'lucide-react'
+import { Trash2, Edit2, Plus, Check, X } from 'lucide-react'
 import type { Service } from '@/lib/data'
 
 export default function AdminPage() {
@@ -15,6 +15,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [showAddService, setShowAddService] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showPending, setShowPending] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -36,10 +37,16 @@ export default function AdminPage() {
   const [savingLogo, setSavingLogo] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
+  const approvedServices = services.filter((s) => s.status === 'approved')
+  const pendingServices = services.filter((s) => s.status === 'pending')
+
   const loadData = async () => {
     setLoading(true)
-    const svc = await fetchServices()
-    setServices(svc as Service[])
+    const res = await fetch('/api/admin/services?password=' + encodeURIComponent(adminPassword))
+    if (res.ok) {
+      const result = await res.json()
+      setServices(result.services || [])
+    }
     const settings = await fetchSettings()
     if (settings?.logo_url) {
       setCurrentLogoUrl(settings.logo_url)
@@ -164,6 +171,25 @@ export default function AdminPage() {
     setShowAddService(true)
   }
 
+  const handleApprove = async (id: string) => {
+    const res = await fetch('/api/admin/services', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: adminPassword, id, status: 'approved' }),
+    })
+    if (!res.ok) {
+      const result = await res.json()
+      alert(result.error || 'Erreur lors de la publication')
+      return
+    }
+    await loadData()
+  }
+
+  const handleReject = async (id: string) => {
+    if (!confirm('Refuser et supprimer cette proposition ?')) return
+    await handleDeleteService(id)
+  }
+
   const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -246,8 +272,19 @@ export default function AdminPage() {
             </button>
           </div>
 
-          <div className="flex gap-4 mb-8 border-b border-border">
+          <div className="flex gap-4 mb-8 border-b border-border flex-wrap">
             <button className="px-4 py-2 border-b-2 border-ink font-medium">Services</button>
+            <button
+              onClick={() => setShowPending(!showPending)}
+              className="px-4 py-2 text-muted hover:text-ink transition-colors flex items-center gap-2"
+            >
+              En attente
+              {pendingServices.length > 0 && (
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-accent text-white text-xs font-bold">
+                  {pendingServices.length}
+                </span>
+              )}
+            </button>
             <button
               onClick={() => setShowSettings(!showSettings)}
               className="px-4 py-2 text-muted hover:text-ink transition-colors"
@@ -255,6 +292,70 @@ export default function AdminPage() {
               Parametres du site
             </button>
           </div>
+
+          {showPending && (
+            <div className="mb-12">
+              <h2 className="text-xl font-bold mb-4">Propositions en attente</h2>
+              {pendingServices.length === 0 ? (
+                <p className="text-muted text-sm">Aucune proposition en attente pour le moment.</p>
+              ) : (
+                <div className="space-y-3">
+                  {pendingServices.map((service) => (
+                    <div
+                      key={service.id}
+                      className="p-4 border border-border rounded-lg bg-surface"
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        {isVideoUrl(service.image_url) ? (
+                          <video
+                            src={service.image_url}
+                            className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                            muted
+                            loop
+                            autoPlay
+                            playsInline
+                          />
+                        ) : (
+                          <img
+                            src={service.image_url}
+                            alt={service.name}
+                            className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-semibold">{service.name}</h3>
+                          <p className="text-sm text-muted">
+                            {service.type} - {service.city} - {service.price} EUR
+                          </p>
+                          <p className="text-sm text-muted mt-1">{service.salon_name}</p>
+                          <p className="text-sm text-muted">{service.contact}</p>
+                          {service.description && (
+                            <p className="text-sm text-muted mt-1">{service.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleApprove(service.id)}
+                          className="btn btn-primary flex items-center gap-2 flex-1 justify-center"
+                        >
+                          <Check className="w-4 h-4" />
+                          Publier
+                        </button>
+                        <button
+                          onClick={() => handleReject(service.id)}
+                          className="btn btn-secondary flex items-center gap-2 flex-1 justify-center"
+                        >
+                          <X className="w-4 h-4" />
+                          Refuser
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {showSettings && (
             <div className="mb-12 p-6 border border-border rounded-lg bg-surface">
@@ -439,7 +540,7 @@ export default function AdminPage() {
             <p className="text-muted">Chargement...</p>
           ) : (
             <div className="space-y-3">
-              {services.map((service) => (
+              {approvedServices.map((service) => (
                 <div
                   key={service.id}
                   className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-surface transition-colors"
