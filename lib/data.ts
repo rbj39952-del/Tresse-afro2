@@ -8,6 +8,7 @@ export interface Service {
   contact: string
   image_url: string
   description?: string | null
+  status: string
   created_at: string
   updated_at: string
 }
