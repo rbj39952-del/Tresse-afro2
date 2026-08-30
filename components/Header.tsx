@@ -30,9 +30,22 @@ export function Header() {
             </div>
             <span className="font-bold text-lg hidden sm:inline">Tresse Afro</span>
           </Link>
-          <nav className="flex items-center gap-4">
-            <Link href="/" className="text-sm hover:text-muted transition-colors">Accueil</Link>
-            <Link href="/admin" className="text-sm px-3 py-2 rounded-lg bg-surface hover:bg-gray-200 transition-colors">Admin</Link>
+          <nav className="flex items-center gap-2 sm:gap-4">
+            <Link href="/" className="text-sm hover:text-muted transition-colors hidden sm:inline">
+              Accueil
+            </Link>
+            <Link
+              href="/proposer"
+              className="text-sm px-3 py-2 rounded-lg bg-accent text-white hover:bg-accent-dark transition-colors"
+            >
+              Ajouter ma coiffure
+            </Link>
+            <Link
+              href="/admin"
+              className="text-sm px-3 py-2 rounded-lg bg-surface hover:bg-gray-200 transition-colors"
+            >
+              Admin
+            </Link>
           </nav>
         </div>
       </div>
