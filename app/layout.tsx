@@ -1,32 +1,33 @@
-import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
-
-const inter = Inter({ subsets: ['latin'] })
+import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'Tresse Afro - Annuaire de coiffures afro a Paris',
-  description: 'Decouvrez les plus beaux styles de coiffures afro a Paris et en Ile-de-France',
+  title: "Tresse Afro",
+  description: "Annuaire des coiffures afro à Paris et Île-de-France",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: 'Tresse Afro',
-    statusBarStyle: 'default',
+    statusBarStyle: "default",
+    title: "Tresse Afro",
   },
   icons: {
-    apple: 'https://images.unsplash.com/photo-1595152772835-219674b2a8a6?w=180&h=180&fit=crop&q=80',
+    apple: "/apple-touch-icon.png",
   },
-}
+};
 
-export const viewport: Viewport = {
-  themeColor: '#09090B',
-}
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="fr">
-      <body className={`${inter.className} bg-white text-ink antialiased`}>
-        {children}
-      </body>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="theme-color" content="#09090B" />
+      </head>
+      <body>{children}</body>
     </html>
-  )
+  );
 }
