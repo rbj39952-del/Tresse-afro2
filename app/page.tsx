@@ -78,14 +78,9 @@ export default function Home() {
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="mb-8">
-            <p className="text-xs font-semibold tracking-widest uppercase text-muted mb-1.5">
-              Le·la
-            </p>
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-3">
-              meilleur·e<br />coiffeur·se afro
-            </h1>
-            <p className="text-base text-muted max-w-2xl">
-              près de chez vous, dans toute la France.
+            <h1 className="text-4xl sm:text-5xl font-bold mb-4 tracking-tight">Tresse Afro</h1>
+            <p className="text-lg text-muted max-w-2xl">
+              Trouvez votre prochaine coiffure afro a Paris et en Ile-de-France. Contactez directement le salon ou la coiffeuse.
             </p>
           </div>
 
@@ -161,4 +156,6 @@ export default function Home() {
       />
 
       <Footer />
-    
+    </div>
+  )
+}
