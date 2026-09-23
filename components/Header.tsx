@@ -1,50 +1,33 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { fetchSettings } from '@/lib/supabase'
-
-const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1595152772835-219674b2a8a6?w=100&h=100&fit=crop&q=80'
 
 export function Header() {
-  const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO)
-
-  useEffect(() => {
-    async function load() {
-      const settings = await fetchSettings()
-      if (settings?.logo_url) {
-        setLogoUrl(settings.logo_url)
-      }
-    }
-    load()
-  }, [])
-
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-border">
+    <header className="sticky top-0 z-50 bg-white border-b border-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-              <Image src={logoUrl} alt="Tresse Afro" fill className="object-cover" />
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full border border-black flex items-center justify-center flex-shrink-0">
+              <span className="text-[11px] font-extrabold tracking-tight">TA</span>
             </div>
-            <span className="font-bold text-lg hidden sm:inline">Tresse Afro</span>
+            <span className="font-bold text-lg">Tresse Afro</span>
           </Link>
-          <nav className="flex items-center gap-2 sm:gap-4">
-            <Link href="/" className="text-sm hover:text-muted transition-colors hidden sm:inline">
+          <nav className="flex items-center gap-4 sm:gap-5">
+            <Link href="/" className="text-sm font-medium text-black hidden sm:inline">
               Accueil
             </Link>
             <Link
-              href="/proposer"
-              className="text-sm px-3 py-2 rounded-lg bg-accent text-white hover:bg-accent-dark transition-colors"
-            >
-              Ajouter ma coiffure
-            </Link>
-            <Link
               href="/admin"
-              className="text-sm px-3 py-2 rounded-lg bg-surface hover:bg-gray-200 transition-colors"
+              className="text-sm font-medium text-gray-500 hover:text-black transition-colors"
             >
               Admin
+            </Link>
+            <Link
+              href="/proposer"
+              className="text-sm font-semibold px-4 py-2 rounded-full bg-black text-white hover:bg-gray-800 transition-colors"
+            >
+              Ajouter ma coiffure
             </Link>
           </nav>
         </div>
