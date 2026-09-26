@@ -329,6 +329,11 @@ export default function AdminPage() {
                           </p>
                           <p className="text-sm text-muted mt-1">{service.salon_name}</p>
                           <p className="text-sm text-muted">{service.contact}</p>
+                          {(service as any).submitted_by && (
+                            <p className="text-sm font-semibold mt-1">
+                              Pseudonyme : {(service as any).submitted_by}
+                            </p>
+                          )}
                           {service.description && (
                             <p className="text-sm text-muted mt-1">{service.description}</p>
                           )}
