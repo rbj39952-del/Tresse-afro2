@@ -8,6 +8,7 @@ import { FilterPanel } from '@/components/FilterPanel'
 import { ServiceCard } from '@/components/ServiceCard'
 import { ServiceModal } from '@/components/ServiceModal'
 import { fetchServices } from '@/lib/supabase'
+import { getFavorites, toggleFavorite } from '@/lib/favorites'
 import type { Service } from '@/lib/data'
 
 export default function Home() {
@@ -16,8 +17,11 @@ export default function Home() {
   const [search, setSearch] = useState('')
   const [selectedType, setSelectedType] = useState('')
   const [selectedCity, setSelectedCity] = useState('')
+  const [sortBy, setSortBy] = useState('')
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [favorites, setFavorites] = useState<string[]>([])
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -26,7 +30,12 @@ export default function Home() {
       setLoading(false)
     }
     load()
+    setFavorites(getFavorites())
   }, [])
+
+  const handleToggleFavorite = (id: string) => {
+    setFavorites(toggleFavorite(id))
+  }
 
   const cities = useMemo(() => {
     const map = new Map<string, string>()
@@ -52,7 +61,7 @@ export default function Home() {
   }, [services])
 
   const filteredServices = useMemo(() => {
-    return services.filter((service) => {
+    let result = services.filter((service) => {
       const matchesSearch =
         search === '' ||
         service.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -63,9 +72,18 @@ export default function Home() {
       const matchesCity =
         selectedCity === '' ||
         service.city.trim().toLowerCase() === selectedCity.trim().toLowerCase()
-      return matchesSearch && matchesType && matchesCity
+      const matchesFavorite = !showFavoritesOnly || favorites.includes(service.id)
+      return matchesSearch && matchesType && matchesCity && matchesFavorite
     })
-  }, [services, search, selectedType, selectedCity])
+
+    if (sortBy === 'price_asc') {
+      result = [...result].sort((a, b) => a.price - b.price)
+    } else if (sortBy === 'price_desc') {
+      result = [...result].sort((a, b) => b.price - a.price)
+    }
+
+    return result
+  }, [services, search, selectedType, selectedCity, sortBy, showFavoritesOnly, favorites])
 
   const handleSelectService = (service: Service) => {
     setSelectedService(service)
@@ -102,14 +120,28 @@ export default function Home() {
 
           <div className="space-y-4 mb-10">
             <SearchBar value={search} onChange={setSearch} placeholder="Chercher un style, un salon..." />
-            <FilterPanel
-              types={types}
-              selectedType={selectedType}
-              selectedCity={selectedCity}
-              cities={cities}
-              onTypeChange={setSelectedType}
-              onCityChange={setSelectedCity}
-            />
+            <div className="flex flex-col sm:flex-row gap-3">
+              <FilterPanel
+                types={types}
+                selectedType={selectedType}
+                selectedCity={selectedCity}
+                cities={cities}
+                sortBy={sortBy}
+                onTypeChange={setSelectedType}
+                onCityChange={setSelectedCity}
+                onSortChange={setSortBy}
+              />
+              <button
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                className={`px-4 py-2.5 rounded-lg border text-sm font-semibold whitespace-nowrap ${
+                  showFavoritesOnly
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-ink border-border'
+                }`}
+              >
+                ❤ Mes favoris {favorites.length > 0 ? `(${favorites.length})` : ''}
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -131,13 +163,21 @@ export default function Home() {
                       key={service.id}
                       service={service}
                       onClick={() => handleSelectService(service)}
+                      isFavorite={favorites.includes(service.id)}
+                      onToggleFavorite={handleToggleFavorite}
                     />
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-16">
-                  <p className="text-muted text-lg mb-2">Aucun resultat trouve</p>
-                  <p className="text-sm text-muted">Essayez en modifiant vos filtres ou votre recherche.</p>
+                  <p className="text-muted text-lg mb-2">
+                    {showFavoritesOnly ? 'Aucun favori pour le moment' : 'Aucun resultat trouve'}
+                  </p>
+                  <p className="text-sm text-muted">
+                    {showFavoritesOnly
+                      ? 'Touchez le cœur sur une photo pour l\'ajouter ici.'
+                      : 'Essayez en modifiant vos filtres ou votre recherche.'}
+                  </p>
                 </div>
               )}
             </>
