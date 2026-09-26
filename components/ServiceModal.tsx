@@ -1,8 +1,10 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { X, MapPin, Phone } from 'lucide-react'
 import { isVideoUrl } from '@/lib/data'
+import { slugify } from '@/lib/slug'
 import type { Service } from '@/lib/data'
 
 interface ServiceModalProps {
@@ -67,7 +69,13 @@ export function ServiceModal({ service, isOpen, onClose }: ServiceModalProps) {
 
           <div>
             <h3 className="text-sm font-semibold text-muted mb-1">Salon / Coiffeuse</h3>
-            <p className="font-medium">{service.salon_name}</p>
+            <Link
+              href={`/salon/${slugify(service.salon_name)}`}
+              onClick={onClose}
+              className="font-medium underline underline-offset-2"
+            >
+              {service.salon_name}
+            </Link>
           </div>
 
           {service.description && (
