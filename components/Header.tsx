@@ -11,8 +11,8 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full border border-black flex items-center justify-center flex-shrink-0">
-              <span className="text-[11px] font-extrabold tracking-tight">TA</span>
+            <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center flex-shrink-0 -rotate-3">
+              <span className="text-white text-xs font-bold tracking-tight rotate-3">TA</span>
             </div>
             <span className="font-bold text-lg">Tresse Afro</span>
           </Link>
