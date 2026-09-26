@@ -9,7 +9,10 @@ import { ServiceCard } from '@/components/ServiceCard'
 import { ServiceModal } from '@/components/ServiceModal'
 import { fetchServices } from '@/lib/supabase'
 import { getFavorites, toggleFavorite } from '@/lib/favorites'
+import { geocodeCity, haversineDistance } from '@/lib/geo'
 import type { Service } from '@/lib/data'
+
+type Coords = { lat: number; lon: number }
 
 export default function Home() {
   const [services, setServices] = useState<Service[]>([])
@@ -23,6 +26,11 @@ export default function Home() {
   const [favorites, setFavorites] = useState<string[]>([])
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
 
+  const [userLocation, setUserLocation] = useState<Coords | null>(null)
+  const [cityCoords, setCityCoords] = useState<Record<string, Coords | null>>({})
+  const [geoLoading, setGeoLoading] = useState(false)
+  const [geoError, setGeoError] = useState('')
+
   useEffect(() => {
     async function load() {
       const svc = await fetchServices()
@@ -35,6 +43,40 @@ export default function Home() {
 
   const handleToggleFavorite = (id: string) => {
     setFavorites(toggleFavorite(id))
+  }
+
+  const handleNearMe = () => {
+    if (sortBy === 'distance') {
+      setSortBy('')
+      return
+    }
+    setGeoError('')
+    if (!navigator.geolocation) {
+      setGeoError("La géolocalisation n'est pas disponible sur cet appareil.")
+      return
+    }
+    setGeoLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const loc = { lat: pos.coords.latitude, lon: pos.coords.longitude }
+        setUserLocation(loc)
+
+        const uniqueCities = Array.from(new Set(services.map((s) => s.city.trim())))
+        const missing = uniqueCities.filter((c) => !(c in cityCoords))
+        const results = await Promise.all(missing.map((c) => geocodeCity(c)))
+        const updates: Record<string, Coords | null> = {}
+        missing.forEach((c, i) => {
+          updates[c] = results[i]
+        })
+        setCityCoords((prev) => ({ ...prev, ...updates }))
+        setSortBy('distance')
+        setGeoLoading(false)
+      },
+      () => {
+        setGeoError("Impossible d'accéder à votre position. Vérifiez les autorisations de localisation.")
+        setGeoLoading(false)
+      }
+    )
   }
 
   const cities = useMemo(() => {
@@ -80,10 +122,21 @@ export default function Home() {
       result = [...result].sort((a, b) => a.price - b.price)
     } else if (sortBy === 'price_desc') {
       result = [...result].sort((a, b) => b.price - a.price)
+    } else if (sortBy === 'distance' && userLocation) {
+      result = [...result].sort((a, b) => {
+        const ca = cityCoords[a.city.trim()]
+        const cb = cityCoords[b.city.trim()]
+        if (!ca && !cb) return 0
+        if (!ca) return 1
+        if (!cb) return -1
+        const da = haversineDistance(userLocation.lat, userLocation.lon, ca.lat, ca.lon)
+        const db = haversineDistance(userLocation.lat, userLocation.lon, cb.lat, cb.lon)
+        return da - db
+      })
     }
 
     return result
-  }, [services, search, selectedType, selectedCity, sortBy, showFavoritesOnly, favorites])
+  }, [services, search, selectedType, selectedCity, sortBy, showFavoritesOnly, favorites, userLocation, cityCoords])
 
   const handleSelectService = (service: Service) => {
     setSelectedService(service)
@@ -120,7 +173,7 @@ export default function Home() {
 
           <div className="space-y-4 mb-10">
             <SearchBar value={search} onChange={setSearch} placeholder="Chercher un style, un salon..." />
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
               <FilterPanel
                 types={types}
                 selectedType={selectedType}
@@ -132,6 +185,16 @@ export default function Home() {
                 onSortChange={setSortBy}
               />
               <button
+                onClick={handleNearMe}
+                className={`px-4 py-2.5 rounded-lg border text-sm font-semibold whitespace-nowrap ${
+                  sortBy === 'distance'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-ink border-border'
+                }`}
+              >
+                {geoLoading ? '📍 Localisation...' : '📍 Près de moi'}
+              </button>
+              <button
                 onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
                 className={`px-4 py-2.5 rounded-lg border text-sm font-semibold whitespace-nowrap ${
                   showFavoritesOnly
@@ -142,6 +205,7 @@ export default function Home() {
                 ❤ Mes favoris {favorites.length > 0 ? `(${favorites.length})` : ''}
               </button>
             </div>
+            {geoError && <p className="text-sm text-red-600">{geoError}</p>}
           </div>
 
           {loading ? (
