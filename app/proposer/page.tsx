@@ -21,6 +21,7 @@ export default function ProposerPage() {
     contact: '',
     image_url: '',
     description: '',
+    submitted_by: '',
   })
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,6 +62,7 @@ export default function ProposerPage() {
         city: formData.city.trim(),
         salon_name: formData.salon_name.trim(),
         contact: formData.contact.trim(),
+        submitted_by: formData.submitted_by.trim(),
       }),
     })
     setSending(false)
@@ -181,6 +183,14 @@ export default function ProposerPage() {
               onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
               className="input"
               required
+            />
+
+            <input
+              type="text"
+              placeholder="Votre pseudonyme"
+              value={formData.submitted_by}
+              onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
+              className="input"
             />
 
             <textarea
