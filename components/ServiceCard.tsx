@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { MapPin, Heart } from 'lucide-react'
 import { isVideoUrl } from '@/lib/data'
@@ -12,6 +13,43 @@ interface ServiceCardProps {
   onToggleFavorite?: (id: string) => void
 }
 
+function LazyVideo({ src, className }: { src: string; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisible(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref} className="w-full h-full">
+      {visible && (
+        <video
+          src={src}
+          className={className}
+          muted
+          loop
+          autoPlay
+          playsInline
+          preload="metadata"
+        />
+      )}
+    </div>
+  )
+}
+
 export function ServiceCard({ service, onClick, isFavorite, onToggleFavorite }: ServiceCardProps) {
   const isVideo = isVideoUrl(service.image_url)
 
@@ -19,13 +57,9 @@ export function ServiceCard({ service, onClick, isFavorite, onToggleFavorite }: 
     <div onClick={onClick} className="cursor-pointer group">
       <div className="relative w-full aspect-[4/5] bg-surface overflow-hidden rounded-xl border border-border">
         {isVideo ? (
-          <video
+          <LazyVideo
             src={service.image_url}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            muted
-            loop
-            autoPlay
-            playsInline
           />
         ) : (
           <Image
