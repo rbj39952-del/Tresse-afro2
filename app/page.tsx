@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { SearchBar } from '@/components/SearchBar'
@@ -14,7 +15,23 @@ import type { Service } from '@/lib/data'
 
 type Coords = { lat: number; lon: number }
 
-export default function Home() {
+function LocateIcon({ active }: { active: boolean }) {
+  return (
+    <span className="relative inline-flex items-center justify-center w-4 h-4">
+      {active && (
+        <span className="absolute inline-flex h-full w-full rounded-full bg-current opacity-20 animate-ping" />
+      )}
+      <svg viewBox="0 0 24 24" fill="none" className="relative w-4 h-4">
+        <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.6" />
+        <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+        <path d="M12 1.5V4M12 20v2.5M22.5 12H20M4 12H1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    </span>
+  )
+}
+
+function HomeContent() {
+  const searchParams = useSearchParams()
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -40,12 +57,13 @@ export default function Home() {
     }
     load()
     setFavorites(getFavorites())
-
-    const params = new URLSearchParams(window.location.search)
-    const g = params.get('gender')
-    if (g === 'femme' || g === 'homme' || g === 'mixte') setSelectedGender(g)
-    if (params.get('view') === 'favoris') setShowFavoritesOnly(true)
   }, [])
+
+  useEffect(() => {
+    const g = searchParams.get('gender')
+    setSelectedGender(g === 'femme' || g === 'homme' || g === 'mixte' ? g : '')
+    setShowFavoritesOnly(searchParams.get('view') === 'favoris')
+  }, [searchParams])
 
   const handleToggleFavorite = (id: string) => {
     setFavorites(toggleFavorite(id))
@@ -190,31 +208,20 @@ export default function Home() {
                 selectedCity={selectedCity}
                 cities={cities}
                 sortBy={sortBy}
-                selectedGender={selectedGender}
                 onTypeChange={setSelectedType}
                 onCityChange={setSelectedCity}
                 onSortChange={setSortBy}
-                onGenderChange={setSelectedGender}
               />
               <button
                 onClick={handleNearMe}
-                className={`px-4 py-2.5 rounded-lg border text-sm font-semibold whitespace-nowrap ${
+                className={`px-4 py-2.5 rounded-lg border text-sm font-semibold whitespace-nowrap inline-flex items-center gap-2 ${
                   sortBy === 'distance'
                     ? 'bg-black text-white border-black'
                     : 'bg-white text-ink border-border'
                 }`}
               >
-                {geoLoading ? '📍 Localisation...' : '📍 Près de moi'}
-              </button>
-              <button
-                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                className={`px-4 py-2.5 rounded-lg border text-sm font-semibold whitespace-nowrap ${
-                  showFavoritesOnly
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-ink border-border'
-                }`}
-              >
-                ❤ Mes favoris {favorites.length > 0 ? `(${favorites.length})` : ''}
+                <LocateIcon active={sortBy === 'distance' || geoLoading} />
+                {geoLoading ? 'Localisation...' : 'Près de moi'}
               </button>
             </div>
             {geoError && <p className="text-sm text-red-600">{geoError}</p>}
@@ -272,5 +279,13 @@ export default function Home() {
 
       <Footer />
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   )
 }
