@@ -29,6 +29,7 @@ export default function AdminPage() {
     contact: '',
     image_url: '',
     description: '',
+    gender: 'mixte',
   })
 
   const [currentLogoUrl, setCurrentLogoUrl] = useState('')
@@ -84,6 +85,7 @@ export default function AdminPage() {
       contact: '',
       image_url: '',
       description: '',
+      gender: 'mixte',
     })
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
@@ -166,6 +168,7 @@ export default function AdminPage() {
       contact: service.contact,
       image_url: service.image_url,
       description: service.description || '',
+      gender: service.gender || 'mixte',
     })
     setEditingService(service)
     setShowAddService(true)
@@ -327,11 +330,14 @@ export default function AdminPage() {
                           <p className="text-sm text-muted">
                             {service.type} - {service.city} - {service.price} EUR
                           </p>
+                          <p className="text-sm text-muted mt-1">
+                            Genre : {service.gender || 'mixte'}
+                          </p>
                           <p className="text-sm text-muted mt-1">{service.salon_name}</p>
                           <p className="text-sm text-muted">{service.contact}</p>
-                          {(service as any).submitted_by && (
+                          {service.submitted_by && (
                             <p className="text-sm font-semibold mt-1">
-                              Pseudonyme : {(service as any).submitted_by}
+                              Pseudonyme : {service.submitted_by}
                             </p>
                           )}
                           {service.description && (
@@ -479,6 +485,16 @@ export default function AdminPage() {
                   required
                 />
 
+                <select
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  className="input"
+                >
+                  <option value="femme">Femme</option>
+                  <option value="homme">Homme</option>
+                  <option value="mixte">Mixte</option>
+                </select>
+
                 <input
                   type="text"
                   placeholder="Ville *"
@@ -563,7 +579,7 @@ export default function AdminPage() {
                     <div>
                       <h3 className="font-semibold">{service.name}</h3>
                       <p className="text-sm text-muted">
-                        {service.type} - {service.city} - {service.price} EUR
+                        {service.type} - {service.city} - {service.price} EUR - {service.gender || 'mixte'}
                       </p>
                     </div>
                   </div>
