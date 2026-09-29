@@ -20,6 +20,7 @@ export default function Home() {
   const [search, setSearch] = useState('')
   const [selectedType, setSelectedType] = useState('')
   const [selectedCity, setSelectedCity] = useState('')
+  const [selectedGender, setSelectedGender] = useState('')
   const [sortBy, setSortBy] = useState('')
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -39,6 +40,11 @@ export default function Home() {
     }
     load()
     setFavorites(getFavorites())
+
+    const params = new URLSearchParams(window.location.search)
+    const g = params.get('gender')
+    if (g === 'femme' || g === 'homme' || g === 'mixte') setSelectedGender(g)
+    if (params.get('view') === 'favoris') setShowFavoritesOnly(true)
   }, [])
 
   const handleToggleFavorite = (id: string) => {
@@ -115,7 +121,11 @@ export default function Home() {
         selectedCity === '' ||
         service.city.trim().toLowerCase() === selectedCity.trim().toLowerCase()
       const matchesFavorite = !showFavoritesOnly || favorites.includes(service.id)
-      return matchesSearch && matchesType && matchesCity && matchesFavorite
+      const g = (service.gender || 'mixte').toLowerCase()
+      const matchesGender =
+        selectedGender === '' ||
+        (selectedGender === 'mixte' ? g === 'mixte' : g === selectedGender || g === 'mixte')
+      return matchesSearch && matchesType && matchesCity && matchesFavorite && matchesGender
     })
 
     if (sortBy === 'price_asc') {
@@ -136,7 +146,7 @@ export default function Home() {
     }
 
     return result
-  }, [services, search, selectedType, selectedCity, sortBy, showFavoritesOnly, favorites, userLocation, cityCoords])
+  }, [services, search, selectedType, selectedCity, selectedGender, sortBy, showFavoritesOnly, favorites, userLocation, cityCoords])
 
   const handleSelectService = (service: Service) => {
     setSelectedService(service)
@@ -180,9 +190,11 @@ export default function Home() {
                 selectedCity={selectedCity}
                 cities={cities}
                 sortBy={sortBy}
+                selectedGender={selectedGender}
                 onTypeChange={setSelectedType}
                 onCityChange={setSelectedCity}
                 onSortChange={setSortBy}
+                onGenderChange={setSelectedGender}
               />
               <button
                 onClick={handleNearMe}
