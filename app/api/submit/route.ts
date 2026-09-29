@@ -10,9 +10,9 @@ function getAdminClient() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { name, type, city, price, salon_name, contact, image_url, description, submitted_by } = body
+  const { name, type, city, price, salon_name, contact, image_url, description, submitted_by, gender } = body
 
-  if (!name || !type || !city || !salon_name || !contact || !image_url) {
+  if (!name || !type || !city || !salon_name || !contact || !image_url || !gender) {
     return NextResponse.json({ error: 'Champs manquants' }, { status: 400 })
   }
 
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
         image_url,
         description: description || null,
         submitted_by: submitted_by || null,
+        gender,
         status: 'pending',
       },
     ])
