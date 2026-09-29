@@ -8,9 +8,11 @@ interface FilterPanelProps {
   selectedCity: string
   cities: string[]
   sortBy: string
+  selectedGender: string
   onTypeChange: (value: string) => void
   onCityChange: (value: string) => void
   onSortChange: (value: string) => void
+  onGenderChange: (value: string) => void
 }
 
 export function FilterPanel({
@@ -19,12 +21,28 @@ export function FilterPanel({
   selectedCity,
   cities,
   sortBy,
+  selectedGender,
   onTypeChange,
   onCityChange,
   onSortChange,
+  onGenderChange,
 }: FilterPanelProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+      <div className="relative min-w-[200px]">
+        <select
+          value={selectedGender}
+          onChange={(e) => onGenderChange(e.target.value)}
+          className="appearance-none w-full input pr-10 bg-white cursor-pointer"
+        >
+          <option value="">Femme / Homme / Mixte</option>
+          <option value="femme">Femme</option>
+          <option value="homme">Homme</option>
+          <option value="mixte">Mixte</option>
+        </select>
+        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+      </div>
+
       <div className="relative min-w-[200px]">
         <select
           value={selectedType}
