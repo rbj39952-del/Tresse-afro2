@@ -354,6 +354,13 @@ export default function AdminPage() {
                           Publier
                         </button>
                         <button
+                          onClick={() => handleEditService(service)}
+                          className="btn btn-secondary flex items-center gap-2 flex-1 justify-center"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          Modifier
+                        </button>
+                        <button
                           onClick={() => handleReject(service.id)}
                           className="btn btn-secondary flex items-center gap-2 flex-1 justify-center"
                         >
