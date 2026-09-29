@@ -9,6 +9,7 @@ export interface Service {
   image_url: string
   description?: string | null
   status: string
+  gender: string
   created_at: string
   updated_at: string
 }
