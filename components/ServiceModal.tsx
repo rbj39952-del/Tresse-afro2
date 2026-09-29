@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { X, MapPin, Phone } from 'lucide-react'
+import { X, MapPin, Phone, Share2 } from 'lucide-react'
 import { isVideoUrl } from '@/lib/data'
 import { slugify } from '@/lib/slug'
 import type { Service } from '@/lib/data'
@@ -31,6 +31,25 @@ export function ServiceModal({ service, isOpen, onClose }: ServiceModalProps) {
   const contactHref = getContactHref(service.contact)
   const isPhoneLink = contactHref.startsWith('tel:')
   const isVideo = isVideoUrl(service.image_url)
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/salon/${slugify(service.salon_name)}`
+    const shareData = {
+      title: service.name,
+      text: `${service.name} — ${service.salon_name}, ${service.city}`,
+      url,
+    }
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+      } catch {
+        // annulé par l'utilisateur, rien à faire
+      }
+    } else {
+      await navigator.clipboard.writeText(url)
+      alert('Lien copié !')
+    }
+  }
 
   return (
     <>
@@ -69,13 +88,22 @@ export function ServiceModal({ service, isOpen, onClose }: ServiceModalProps) {
 
           <div>
             <h3 className="text-sm font-semibold text-muted mb-1">Salon / Coiffeuse</h3>
-            <Link
-              href={`/salon/${slugify(service.salon_name)}`}
-              onClick={onClose}
-              className="font-medium underline underline-offset-2"
-            >
-              {service.salon_name}
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/salon/${slugify(service.salon_name)}`}
+                onClick={onClose}
+                className="font-medium underline underline-offset-2"
+              >
+                {service.salon_name}
+              </Link>
+              <button
+                onClick={handleShare}
+                aria-label="Partager"
+                className="p-1.5 hover:bg-surface rounded-lg transition-colors"
+              >
+                <Share2 className="w-4 h-4 text-muted" />
+              </button>
+            </div>
           </div>
 
           {service.description && (
