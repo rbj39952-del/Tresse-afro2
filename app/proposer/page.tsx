@@ -22,6 +22,7 @@ export default function ProposerPage() {
     image_url: '',
     description: '',
     submitted_by: '',
+    gender: '',
   })
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,9 +46,10 @@ export default function ProposerPage() {
       !formData.city.trim() ||
       !formData.salon_name.trim() ||
       !formData.contact.trim() ||
-      !formData.image_url
+      !formData.image_url ||
+      !formData.gender
     ) {
-      alert('Merci de remplir tous les champs obligatoires')
+      alert('Merci de remplir tous les champs obligatoires (dont le genre)')
       return
     }
 
@@ -149,6 +151,18 @@ export default function ProposerPage() {
               className="input"
               required
             />
+
+            <select
+              value={formData.gender}
+              onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+              className="input"
+              required
+            >
+              <option value="">Ce style est pour... *</option>
+              <option value="femme">Femme</option>
+              <option value="homme">Homme</option>
+              <option value="mixte">Mixte (les deux)</option>
+            </select>
 
             <input
               type="text"
