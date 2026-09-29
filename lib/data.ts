@@ -10,6 +10,7 @@ export interface Service {
   description?: string | null
   status: string
   gender: string
+  submitted_by?: string | null
   created_at: string
   updated_at: string
 }
